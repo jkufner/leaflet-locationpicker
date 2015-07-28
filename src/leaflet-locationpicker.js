@@ -15,7 +15,8 @@ TODO
 
 	$.fn.leafletLocationPicker = function(opts, onChangeLocation) {
 
-		var baseClassName = 'leaflet-locpicker',
+		var baseClassName = 'leaflet-locpicker'
+			baseDataName = 'locpicker',
 			baseLayers = {
 				'OSM': 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 				'SAT': 'http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.png'
@@ -82,7 +83,7 @@ TODO
 					else
 						retLoc = null;
 				break;	    		
-/*				case 'array':
+				/*case 'array':
 					retLoc = L.latLng(loc);
 				break;
 				case 'object':
@@ -129,7 +130,7 @@ TODO
 				opts.map.layers = opts.layer;
 
 			else
-				opts.map.layers = L.tileLayer(baseLayers.OSM);
+				opts.map.layers = L.tileLayer( baseLayers[defaults.layer] );
 
 			//leaflet map
 			self.map = L.map(self.divMap, opts.map)
@@ -169,19 +170,21 @@ TODO
 			});
 		}
 
-		$(this).each(function(index, input) {
-		    var self = this;
+		return this.each(function(index) {
 
-		    self.$input = $(input);
+		    var self = this,
+		    	$self = $(self);
+		    	//data = $self.data(opts.baseDataName);
 
-		    self.locationOri = self.$input.val();
+		    self.locationOri = $self.val();
 
 			self.onChangeLocation = function() {
 				var edata = {
+					location: self.getLocation(),
 					latlng: self.location,					
-					location: self.getLocation()
+					map: self.map					
 				};
-				self.$input.trigger($.extend(edata, {
+				$self.trigger($.extend(edata, {
 					type: 'changeLocation'
 				}));
 				opts.onChangeLocation.call(self, edata);
@@ -191,9 +194,10 @@ TODO
 		    	self.location = parseLocation(loc);
 		    	if(self.marker)
 		    		self.marker.setLatLng(loc);
-		    	self.$input.data('location', self.location);
-		    	self.$input.val( self.getLocation() );
+		    	$self.data('location', self.location);
+		    	$self.val( self.getLocation() );
 		    	self.onChangeLocation();
+		    	return self;
 		    };
 
 		    self.getLocation = function() {
@@ -208,39 +212,48 @@ TODO
 		    	switch(opts.position) {
 					case 'bottomleft':
 						self.$map.css({
-							top: self.$input.offset().top + self.$input.height() + 6,
-							left: self.$input.offset().left 
+							top: $self.offset().top + $self.height() + 6,
+							left: $self.offset().left 
 						});
 					break;
 					case 'topright':
 						self.$map.css({
-							top: self.$input.offset().top,
-							left: self.$input.offset().left + self.$input.width() + 5
+							top: $self.offset().top,
+							left: $self.offset().left + $self.width() + 5
 						});
 					break;
 				}
 
 				self.$map.show();
 				self.map.invalidateSize();
-				self.$input.trigger('show');
+				return $self.trigger('show');
 			};
 
 		    self.closeMap = function() {
 				self.$map.hide();
-				self.$input.trigger('hide');
+				return $self.trigger('hide');
 		    };
 
 			self.setLocation(self.locationOri);
 
 		    self.$map = buildMap(self);
 
-		    self.$input
+		    $self.openMap = self.openMap;
+		    $self.closeMap = self.closeMap;
+
+		    $self
 		    .addClass(opts.className)
 		    .on('focus.'+opts.className, function(e) {
 		        e.preventDefault();
 		        self.openMap();
 		    });
-/*		    .on('blur.'+opts.className, function(e) {
+		});
+	};
+
+})(jQuery, L);
+
+
+/*	TODO    .on('blur.'+opts.className, function(e) {
 		        e.preventDefault();
 		        console.log(e.originalEvent.relatedTarget);
 				//if(!self.$map.contains(e.originalEvent.relatedTarget))
@@ -249,7 +262,7 @@ TODO
 			/*
 			TODO AUTOHIDE MAP
 			function resetInput() {
-			    self.$input.val(self.locationOri).removeData('location');
+			    $self.val(self.locationOri).removeData('location');
 			}
 			self.$map
 			.on('mouseout.confirm', function() {
@@ -258,9 +271,3 @@ TODO
 			.on('mouseover.confirm', function() {
 			    clearTimeout(self.timeoToken);
 			});*/
-		});
-
-		return this;
-	};
-
-})(jQuery, L);
